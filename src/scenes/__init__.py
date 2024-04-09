@@ -13,7 +13,6 @@ from .raysampler import NeuralSceneRaysampler, PointLightFieldSampler
 from .. import datasets
 from src.scenes.nodes import NeuralCamera, Lidar, SceneObject, ObjectClass, Background
 from src.scenes.frames import Frame
-from src.datasets.extract_baselines import extract_waymo_poses
 from pytorch3d.transforms.rotation_conversions import (
     euler_angles_to_matrix,
     matrix_to_euler_angles,
@@ -71,43 +70,34 @@ class NeuralScene:
 
         for scene_dict in scene_list:
             # Preapre dataset for neural scene conversion
-            dataset = datasets.get_dataset(datadir, scene_dict, args)
+            dataset = datasets.get_dataset(datadir, scene_dict)
             self.dataset = dataset
             scale = exp_dict.get("scale", 1.0)
             print("Extracting Data for Baseline Experiments")
 
-            # For the datasets with just a single camera sensor type (KITTI)
-            if not isinstance(dataset.H, dict):
-                def param2dict(par):
-                    return {'LEFT': par, 'RIGHT': par}
-                dataset.focal = param2dict(focal)
-                dataset.H = param2dict(H)
-                dataset.W = param2dict(W)
-
-            self.H = {k: int(v * scale) for k, v in dataset.H.items()}
-            self.W = {k: int(v * scale) for k, v in dataset.W.items()}
-            self.focal = {k: float(v * scale) for k, v in dataset.focal.items()}
-            self.hwf = {'width': self.W, 'height': self.H,'focal': self.focal}
-
+            self.H = int(dataset.H * scale)
+            self.W = int(dataset.W * scale)
+            self.focal = dataset.focal * scale
 
             # Get and Update nodes
             s_time = time.time()
             node_list = nodes_from_dataset(
-                dataset, neural_scene=self, object_class_list=scene_dict.get("object_class_list"), lightfield_config=lightfield_config
+                dataset, neural_scene=self, object_class_list=scene_dict.get("object_class_list"),
+                lightfield_config=lightfield_config
             )
             self.lightfield_config = lightfield_config if lightfield_config is not None else {}
             nodes_scene = self.updateNodes(node_list)
-            print(f"Loaded Nodes in {time.time()-s_time:.3f} seconds")
+            print(f"Loaded Nodes in {time.time() - s_time:.3f} seconds")
 
             # get frames
             s_time = time.time()
 
             frame_list = frames_from_dataset(
                 dataset, nodes=nodes_scene, n_frames=n_frames, veh_world=veh_world,
-                all_cams= lightfield_config.get("all_cams", False),
+                all_cams=lightfield_config.get("all_cams", False),
                 type=scene_list[0]['type'],
             )
-            print(f"Loaded Frames in {time.time()-s_time:.3f} seconds")
+            print(f"Loaded Frames in {time.time() - s_time:.3f} seconds")
 
             # Store meta data for each frame
             if type(scene_dict['scene_id']) == list:
@@ -137,7 +127,6 @@ class NeuralScene:
             lightfield_config=lightfield_config,
             n_rays_per_image=exp_dict["n_rays"] // exp_dict["image_batch_size"],
             reference_frame='lidar',
-            point_chunk_size=exp_dict.get('point_chunk', 1e12),
             exp_dict=exp_dict
         )
 
@@ -163,7 +152,7 @@ class NeuralScene:
         s_time = time.time()
         pbar = tqdm.tqdm([fr_id for fr_id in self.frames.keys()], desc="Joining Point Clouds", leave=False)
         for fr_id in pbar:
-            pts = self.raysampler._local_sampler.icp.forward(scene=self, cam_frame_id=fr_id, caching=False, augment=False)
+            '''pts = self.raysampler._local_sampler.icp.forward(scene=self, cam_frame_id=fr_id, caching=False, augment=False)'''
             # Visualize for debugging
             # import open3d as o3d
             # open3d.visualization.draw
@@ -197,12 +186,12 @@ class NeuralScene:
         if idx in self.ignore_list:
             print("Ignoring Frame")
             return self.__getitem__(
-                    np.random.choice(
-                        [i for i in range(len(self)) if i not in self.ignore_list]
-                    ),
-                    intersections_only=intersections_only,
+                np.random.choice(
+                    [i for i in range(len(self)) if i not in self.ignore_list]
+                ),
+                intersections_only=intersections_only,
                 random_rays=random_rays,
-                )
+            )
         if idx in self.i_test and not validation:
             return self.__getitem__(
                 np.random.choice(
@@ -212,7 +201,6 @@ class NeuralScene:
                 random_rays=random_rays,
                 validation=validation,
             )
-
 
         frame_idx, camera_idx, meta = self.frames_cameras[idx]
         frame = self.frames[frame_idx]
@@ -249,7 +237,7 @@ class NeuralScene:
             "camera_id": int(camera_idx),
             "meta": meta,
             "images": images,
-            
+
             # "input_dict": input_dict,
             "H": H,
             "W": W,
@@ -361,22 +349,22 @@ class NeuralScene:
         )
 
         trafo_mat = (
-            torch.eye(4, device=self.device)[None]
-            * torch.cat(
-                [scale, torch.full([len(scale), 1], 1.0, device=self.device)], dim=1
-            )[:, None]
+                torch.eye(4, device=self.device)[None]
+                * torch.cat(
+            [scale, torch.full([len(scale), 1], 1.0, device=self.device)], dim=1
+        )[:, None]
         )
         return Transform3d(matrix=trafo_mat)
 
     def init_blank_frames(
-        self,
-        image_ls: List = None,
-        camera_node: NeuralCamera = None,
-        far: float = 150.0,
-        near: float = 0.5,
-        box_scale: float = 1.5,
-        scene_id: int = None,
-        cam_pose=None,
+            self,
+            image_ls: List = None,
+            camera_node: NeuralCamera = None,
+            far: float = 150.0,
+            near: float = 0.5,
+            box_scale: float = 1.5,
+            scene_id: int = None,
+            cam_pose=None,
     ):
         roty = lambda a: np.array(
             [
@@ -456,12 +444,12 @@ class NeuralScene:
         return list(new_frames_idx)
 
     def add_new_obj_edges(
-        self,
-        frame_id: int = None,
-        object_node: SceneObject = None,
-        translation=torch.tensor([0.0, 0.0, 0.0]),
-        rotation=torch.tensor([0.0, 0.0, 0.0]),
-        box_size_scaling: float = 1.5,
+            self,
+            frame_id: int = None,
+            object_node: SceneObject = None,
+            translation=torch.tensor([0.0, 0.0, 0.0]),
+            rotation=torch.tensor([0.0, 0.0, 0.0]),
+            box_size_scaling: float = 1.5,
     ):
 
         frame = self.frames[frame_id]
@@ -487,9 +475,9 @@ class NeuralScene:
         object_transformation = torch.cat([rot_mat, translation[:, None]], dim=1)
 
         object_scaling = (
-            torch.eye(3, device=self.device)
-            * 1
-            / ((object_node.box_size * box_size_scaling) / 2)
+                torch.eye(3, device=self.device)
+                * 1
+                / ((object_node.box_size * box_size_scaling) / 2)
         )
 
         # world to object
@@ -506,7 +494,7 @@ class NeuralScene:
         ADJUST_ARROW_SIZES = True
         ARROW_SIZE_FACTOR = 18
 
-        for ax_id_num,ax_id in enumerate([[0, 1], [0, 2]]):
+        for ax_id_num, ax_id in enumerate([[0, 1], [0, 2]]):
             plt.figure()
             translation = dataset.poses[:, :3, 3]
 
@@ -517,29 +505,33 @@ class NeuralScene:
             # plt.scatter(translation[:, ax_id[0]], translation[:, ax_id[1]], c='cyan')
             plt.axis('equal')
             num_cameras = 5
-            iter = [45] #(1,10),(1,7)
+            iter = [45]  # (1,10),(1,7)
             # iter = [89] #(1,17)
             iter = [0, 2, 4, 6, 8]
             # iter += [i - 10 for i in iter]
             for k in iter:
                 # co_frame_cam_iters = [i for i in range(k//num_cameras*num_cameras,(k//num_cameras+1)*num_cameras)]
-                co_frame_cam_iters = [k%(translation.shape[0]//num_cameras)+i*translation.shape[0]//num_cameras for i in range(num_cameras)]
+                co_frame_cam_iters = [
+                    k % (translation.shape[0] // num_cameras) + i * translation.shape[0] // num_cameras for i in
+                    range(num_cameras)]
                 # adjacent_frame_cam_iters = [i for i in range(co_frame_cam_iters[0]-num_cameras,co_frame_cam_iters[0])]+[i for i in range(co_frame_cam_iters[-1]+1,co_frame_cam_iters[-1]+1+num_cameras)]
-                adjacent_frame_cam_iters = [v-1 for v in co_frame_cam_iters]+[v+1 for v in co_frame_cam_iters]
-                adjacent_frame_cam_iters = [v for v in adjacent_frame_cam_iters if 0<=v<translation.shape[0]]
+                adjacent_frame_cam_iters = [v - 1 for v in co_frame_cam_iters] + [v + 1 for v in co_frame_cam_iters]
+                adjacent_frame_cam_iters = [v for v in adjacent_frame_cam_iters if 0 <= v < translation.shape[0]]
                 adjacent_frame_cam_iters = []
-                for idx in co_frame_cam_iters+adjacent_frame_cam_iters:
-                    plt.scatter(translation[idx, ax_id[0]], translation[idx, ax_id[1]], c='red' if k==idx else 'cyan')
+                for idx in co_frame_cam_iters + adjacent_frame_cam_iters:
+                    plt.scatter(translation[idx, ax_id[0]], translation[idx, ax_id[1]], c='red' if k == idx else 'cyan')
                     for i in range(3):
                         ax = rotation[:, i] * 0.1
                         c = [0, 0, 0]
                         c[i] = 1
                         if ADJUST_ARROW_SIZES:
-                            plt.arrow(translation[idx, ax_id[0]], translation[idx, ax_id[1]], ARROW_SIZE_FACTOR*ax[idx, ax_id[0]], ARROW_SIZE_FACTOR*ax[idx, ax_id[1]],
-                                color=c)
+                            plt.arrow(translation[idx, ax_id[0]], translation[idx, ax_id[1]],
+                                      ARROW_SIZE_FACTOR * ax[idx, ax_id[0]], ARROW_SIZE_FACTOR * ax[idx, ax_id[1]],
+                                      color=c)
                         else:
-                            plt.arrow(translation[idx, ax_id[0]], translation[idx, ax_id[1]], ax[idx, ax_id[0]], ax[idx, ax_id[1]],
-                                color=c)
+                            plt.arrow(translation[idx, ax_id[0]], translation[idx, ax_id[1]], ax[idx, ax_id[0]],
+                                      ax[idx, ax_id[1]],
+                                      color=c)
                 if plt_objs:
                     # plt_obj_poses = dataset.visible_objects[k][:, 7:10]
                     plt_obj_poses = dataset.obj_poses[k][:, :3]
@@ -553,14 +545,14 @@ class NeuralScene:
 
                         if ax_id[1] == 2:
                             plt_obj_rotation = np.array([[np.cos(plt_obj_yaw), -np.sin(plt_obj_yaw)],
-                                                            [np.sin(plt_obj_yaw), np.cos(plt_obj_yaw)]])
+                                                         [np.sin(plt_obj_yaw), np.cos(plt_obj_yaw)]])
                             plt_obj_rotation = np.moveaxis(plt_obj_rotation, -1, 0)
                             for o in range(len(plt_obj_rotation)):
                                 plt.arrow(plt_obj_poses[o, ax_id[0]], plt_obj_poses[o, ax_id[1]],
-                                            plt_obj_rotation[o, 0, 0], plt_obj_rotation[o, 0, 1])
-            assert len(iter)==1
-            plt.title('(obj from img #%d)'%(k))
-            plt.savefig('%s.png'%('BEV' if ax_id==[0,2] else 'side'))
+                                          plt_obj_rotation[o, 0, 0], plt_obj_rotation[o, 0, 1])
+            assert len(iter) == 1
+            plt.title('(obj from img #%d)' % (k))
+            plt.savefig('%s.png' % ('BEV' if ax_id == [0, 2] else 'side'))
         np.matmul(np.linalg.inv(rotation[0]), rotation)
         dataset.poses[:, :3, :3] = rotation
 
@@ -585,30 +577,16 @@ def createCamera(H, W, focal, type=None, type_idx=None):
 
 def createAllCameras(H, W, focal, type_idx=None, type=None):
     nodes_list = []
-    for cam_key in focal.keys():
-        camera_node = NeuralCamera(H[cam_key], W[cam_key], focal[cam_key], name=cam_key, type=type)
-        nodes_list.append(addNode(camera_node,'camera',type_idx=type_idx))
+    camera_node = NeuralCamera(H, W, focal, type=type)
+    nodes_list.append(addNode(camera_node, 'camera', type_idx=type_idx))
 
     return nodes_list
 
 
 def createAllLidars(dataset=None, type_idx=None):
-    if dataset.type == 'kitti':
-        Tr_li2cam = None
-        if hasattr(dataset, 'calibration'):
-            calibration = dataset.calibration
-            if 'Tr_velo2cam' in calibration:
-                Tr_li2cam = calibration['Tr_velo2cam']
-
-        lidar_node = Lidar(Tr_li2cam=Tr_li2cam, name='TOP')
-        node_dict = addNode(lidar_node, 'lidar', type_idx=type_idx)
-        node_list = [node_dict]
-    else:
-        node_list = []
-        for name in dataset.laser_name:
-            lidar_node = Lidar(Tr_li2cam=np.eye(4), name=name)
-            node_list.append(addNode(lidar_node, 'lidar', type_idx=type_idx))
-
+    node_list = []
+    lidar_node = Lidar(Tr_li2cam=np.eye(4))
+    node_list.append(addNode(lidar_node, 'lidar', type_idx=type_idx))
     return node_list
 
 
@@ -649,10 +627,10 @@ def createSceneObject(length, height, width, object_class_node, type_idx=None):
 
 # Methods to create, read and write nodes to the scenes
 def addNode(
-    node,
-    node_type=None,
-    type_idx=None,
-    store_by_name=False,
+        node,
+        node_type=None,
+        type_idx=None,
+        store_by_name=False,
 ):
     """
     Adds a node to the Scene's node dictionaries
@@ -754,10 +732,10 @@ def frames_from_dataset(dataset, nodes, n_frames=None, veh_world=False, all_cams
     n_lasers = dataset.num_lasers
 
     # [n_img, 4, 4] --> [n_cameras, n_frames, 16]
-    camera_poses = dataset.poses.reshape([n_cameras,n_img//n_cameras, -1])
+    camera_poses = dataset.poses.reshape([n_cameras, n_img // n_cameras, -1])
 
     # [n_img] --> [n_cameras, n_frames]
-    images = [dataset.images[n_img//n_cameras*i:n_img//n_cameras*(i+1)] for i in range(n_cameras)]
+    images = [dataset.images[n_img // n_cameras * i:n_img // n_cameras * (i + 1)] for i in range(n_cameras)]
 
     # [n_pcd] --> [n_lasers, n_frames]
     pcd_path = [dataset.point_cloud_pth[n_pcd // n_lasers * i:n_pcd // n_lasers * (i + 1)] for i in range(n_lasers)]
@@ -769,7 +747,7 @@ def frames_from_dataset(dataset, nodes, n_frames=None, veh_world=False, all_cams
         # TODO: Rewrite together with loader such that lidar_poses_world and camera_poses_world are generated here and not inside the dataloader
         lidar_poses = dataset.lidar_poses_world.reshape([n_lasers, n_pcd // n_lasers, -1])
         camera_poses = dataset.poses_world.reshape([n_cameras, n_img // n_cameras, -1])
-        if type == 'waymo':
+        if type == 'rosbag':
             if not all_cams:
                 for pop_cam in cam_ids[-4:]:
                     nodes["camera"].pop(pop_cam)
@@ -788,18 +766,20 @@ def frames_from_dataset(dataset, nodes, n_frames=None, veh_world=False, all_cams
         if EXAMINE_ALL_CAM_OBJECTS:
             object_poses = []
             for frame_id in range(n_img // n_cameras):
-                cand_poses = np.concatenate([dataset.obj_poses[frame_id+i*n_img//n_cameras] for i in range(n_cameras)],0)
+                cand_poses = np.concatenate(
+                    [dataset.obj_poses[frame_id + i * n_img // n_cameras] for i in range(n_cameras)], 0)
                 cand_poses = cand_poses[np.where(cand_poses[:, -1] != -1)]
-                obj_pose,added_IDs = [],set()
+                obj_pose, added_IDs = [], set()
                 for pos in cand_poses:
                     if pos[4] >= 0 and pos[4] not in added_IDs:
                         obj_pose.append(pos)
                         added_IDs.add(pos[4])
                 if len(obj_pose) == 0:
-                    obj_pose =[np.ones(6, ) * -1]
-                object_poses.append(np.stack(obj_pose,0))
+                    obj_pose = [np.ones(6, ) * -1]
+                object_poses.append(np.stack(obj_pose, 0))
         else:
-            object_poses = dataset.obj_poses[:n_img//n_cameras] #In the Kitti case, assuming the same objects appear in both cameras, so only taking objects from the entries corresponding to the first camera.
+            object_poses = dataset.obj_poses[
+                           :n_img // n_cameras]  # In the Kitti case, assuming the same objects appear in both cameras, so only taking objects from the entries corresponding to the first camera.
 
     # Get relevant Ids
     assert len(nodes["background"]) == 1
@@ -814,7 +794,7 @@ def frames_from_dataset(dataset, nodes, n_frames=None, veh_world=False, all_cams
     frame_list = []
     # TODO: Get real frame number of the dataset after refacrtoring the dataset class
     for frame_id in tqdm.tqdm(
-        range(n_img // n_cameras), desc="Frames from Dataset", leave=False
+            range(n_img // n_cameras), desc="Frames from Dataset", leave=False
     ):
         image_ls = [images[i][frame_id] for i in range(n_cameras)]
         point_cloud_pth = [pcd_path[i][frame_id] for i in range(n_lasers)]
@@ -864,7 +844,7 @@ def frames_from_dataset(dataset, nodes, n_frames=None, veh_world=False, all_cams
 
                     ######################
                     object_scaling = (
-                        torch.eye(3, device="cpu") * 1 / (obj_size * dataset.box_scale / 2)
+                            torch.eye(3, device="cpu") * 1 / (obj_size * dataset.box_scale / 2)
                     )
 
                     # world to object
@@ -886,7 +866,8 @@ def frames_from_dataset(dataset, nodes, n_frames=None, veh_world=False, all_cams
             lidar=nodes.get("lidar", None),
             nodes=nodes,
             point_cloud_pth=point_cloud_pth,
-            global_transformation=dataset.veh_pose[frame_id] if dataset.type == 'waymo' or dataset.type == 'algolux' else None,
+            global_transformation=dataset.veh_pose[
+                frame_id] if dataset.type == 'rosbag' or dataset.type == 'algolux' else None,
         )
 
         frame_list += [frame]
@@ -898,11 +879,11 @@ def frames_from_dataset(dataset, nodes, n_frames=None, veh_world=False, all_cams
 
 
 def get_obj_inputs(
-    scene,
-    local_pts_bundle,
-    xycfn,
-    use_locations=False,
-    _transient_head=False,
+        scene,
+        local_pts_bundle,
+        xycfn,
+        use_locations=False,
+        _transient_head=False,
 ):
     local_pts_idx, local_pts, local_dirs = local_pts_bundle
     xycfn_relevant = xycfn[local_pts_idx]

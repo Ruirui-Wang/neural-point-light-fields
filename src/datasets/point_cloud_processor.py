@@ -1,5 +1,5 @@
 from rosbags.serde import deserialize_cdr
-from nerf.point_cloud_helpers import *
+from src.datasets.point_cloud_helpers import *
 
 class PointCloudProcessor:
     @staticmethod

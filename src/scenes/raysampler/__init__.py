@@ -4,7 +4,8 @@ import copy
 import numpy as np
 import torch, tqdm, os
 import torch.nn as nn
-from .pointsampler import BackgroundRaysampler, ObjectRaysampler, PointDistanceRaysamplerTorch, PointDistanceRaysamplerNP
+from .pointsampler import BackgroundRaysampler, ObjectRaysampler, PointDistanceRaysamplerTorch, \
+    PointDistanceRaysamplerNP
 from pytorch3d.renderer.implicit.utils import RayBundle
 from pytorch3d.transforms import Transform3d, Translate, Rotate, Scale
 import matplotlib.pyplot as plt
@@ -28,15 +29,15 @@ class Raysampler:
     """
 
     def __init__(
-        self,
-        global_sampler,
-        local_sampler,
-        scene,
-        reference_frame: str = 'world',
-        n_rays_per_image: int = 1024,
-        use_gt_masks=False,
-        exp_dict=False,
-        additional_ray_information=False,
+            self,
+            global_sampler,
+            local_sampler,
+            scene,
+            reference_frame: str = 'world',
+            n_rays_per_image: int = 1024,
+            use_gt_masks=False,
+            exp_dict=False,
+            additional_ray_information=False,
     ):
         self.use_gt_masks = use_gt_masks
         self.cameras = scene.nodes["camera"]
@@ -58,11 +59,11 @@ class Raysampler:
     def get_intersections_only(self, ray_bundle, scene, fi, ci, faster=False, save_intersections=False):
         n_pixels = ray_bundle.lengths.shape[1]
         fname_end = hu.hash_dict({'0':
-                                  scene.frames[fi].images[ci]}
-                                )
-        fname = os.path.join('/mnt/public/datasets/tmp', fname_end+'.pkl')
+                                      scene.frames[fi].images[ci]}
+                                 )
+        fname = os.path.join('/mnt/public/datasets/tmp', fname_end + '.pkl')
         assert fname != scene.frames[fi].images[ci]
-        
+
         if not os.path.exists(fname):
             # Select only intersecting rays
             ray_bundle = RayBundle(
@@ -98,11 +99,11 @@ class Raysampler:
 
         n_intersects = ray_bundle.lengths[intersection_mask].shape[0]
         if n_intersects < self._n_rays_per_image:
-            t2 = np.setdiff1d(np.arange(n_pixels), intersection_mask[1].numpy() )
-            t3 = torch.from_numpy(np.random.choice(t2, self._n_rays_per_image-n_intersects))
-            intersection_mask = [torch.zeros(self._n_rays_per_image).long(), 
-                                 torch.cat((intersection_mask[1], t3), dim=0).long()] 
-      
+            t2 = np.setdiff1d(np.arange(n_pixels), intersection_mask[1].numpy())
+            t3 = torch.from_numpy(np.random.choice(t2, self._n_rays_per_image - n_intersects))
+            intersection_mask = [torch.zeros(self._n_rays_per_image).long(),
+                                 torch.cat((intersection_mask[1], t3), dim=0).long()]
+
         ray_bundle = RayBundle(
             *[
                 v[intersection_mask].view(
@@ -170,18 +171,19 @@ class Raysampler:
             for c in [ci]:
                 cam_nodes[c] = self.cameras[c]
 
-            rb = self._get_rays(cameras=cam_nodes, edges=edges2cams, device=device, scene=scene, optimize_cam=scene.recalibrate, EPI=EPI,
+            rb = self._get_rays(cameras=cam_nodes, edges=edges2cams, device=device, scene=scene,
+                                optimize_cam=scene.recalibrate, EPI=EPI,
                                 epi_row=epi_row)
 
         # get only intersections
         if (
-            intersections_only
-            and obj_only
-            and self.exp_dict.get("use_intersections", True)
+                intersections_only
+                and obj_only
+                and self.exp_dict.get("use_intersections", True)
         ):
             # get intersections to "cubes for instance"
-            rb = self.get_intersections_only(rb, scene, fi, ci, faster=False, 
-                            save_intersections=self.exp_dict.get("save_intersections", False))
+            rb = self.get_intersections_only(rb, scene, fi, ci, faster=False,
+                                             save_intersections=self.exp_dict.get("save_intersections", False))
 
         if rb is not None:
             full_ray_bundle += [rb]
@@ -197,8 +199,8 @@ class Raysampler:
         if intersections_only or random_rays:
             # Select Random Rays
             sel_rays = torch.randperm(n_pixels, device=device)[
-                : self._n_rays_per_image_train
-            ]
+                       : self._n_rays_per_image_train
+                       ]
 
             # ut.extract_patch(rb.xys, scene.frames[fi].H, scene.frames[fi].W)
         else:
@@ -267,14 +269,14 @@ class Raysampler:
         return ray_dict
 
     def _get_rays(
-        self,
-        cameras: dict,
-        edges: dict,
-        device: str,
-        scene=None,
-        optimize_cam: bool = False,
-        EPI=False,
-        epi_row=None,
+            self,
+            cameras: dict,
+            edges: dict,
+            device: str,
+            scene=None,
+            optimize_cam: bool = False,
+            EPI=False,
+            epi_row=None,
     ):
 
         origins = []
@@ -428,7 +430,8 @@ class Raysampler:
             center_orig = epi_origs[:, epi_row, W // 2]
 
             movement = x_movement * torch.tensor([1., 0., 0.], device=ray_o.device, dtype=ray_o.dtype)
-            scan_line_o = movement[None] * torch.linspace(-1., 1., new_H, device=ray_o.device, dtype=ray_o.dtype)[:, None]
+            scan_line_o = movement[None] * torch.linspace(-1., 1., new_H, device=ray_o.device, dtype=ray_o.dtype)[:,
+                                           None]
             scan_line_o = trafo.transform_points(scan_line_o[:, None]) - center_orig
 
             scan_line_d = epi_dirs[:, epi_row]
@@ -457,7 +460,7 @@ class Raysampler:
         return ray_bundle
 
     def extract_additional_ray_information(
-        self, scene, ray_bundle, local_pts_idx, local_pts, local_dirs, frame_idx
+            self, scene, ray_bundle, local_pts_idx, local_pts, local_dirs, frame_idx
     ):
         xycfn_objs = ray_bundle.xys[local_pts_idx]
         obj_ids = xycfn_objs.unique()
@@ -544,8 +547,8 @@ class Raysampler:
                             [xycfn_plh.repeat(1, 1, pad, 1), rb.xys.to(device)], dim=2
                         )
                         for pad, rb, xycfn_plh in zip(
-                            paddings, ray_bundle_batch, xycfn_placeholder
-                        )
+                        paddings, ray_bundle_batch, xycfn_placeholder
+                    )
                     ],
                     dim=0,
                 )
@@ -702,7 +705,8 @@ class PointLightFieldSampler(Raysampler):
                                                       point_chunk_size=1e12,
                                                       merge_pcd=lightfield_config.get('merge_pcd', False),
                                                       n_frames_merged=n_merged_fr,
-                                                      augment_point_cloud=lightfield_config.get('augment_frame_order', False),
+                                                      augment_point_cloud=lightfield_config.get('augment_frame_order',
+                                                                                                False),
                                                       new_encoding=lightfield_config.get('new_enc', False),
                                                       pt_caching=exp_dict.get('pt_cache', False),
                                                       )
@@ -712,7 +716,8 @@ class PointLightFieldSampler(Raysampler):
                                                          point_chunk_size=1e12,
                                                          merge_pcd=lightfield_config.get('merge_pcd', False),
                                                          n_frames_merged=n_merged_fr,
-                                                         augment_point_cloud=lightfield_config.get('augment_frame_order', False),
+                                                         augment_point_cloud=lightfield_config.get(
+                                                             'augment_frame_order', False),
                                                          new_encoding=lightfield_config.get('new_enc', False),
                                                          pt_caching=exp_dict.get('pt_cache', False),
                                                          )
@@ -722,7 +727,5 @@ class PointLightFieldSampler(Raysampler):
                                                      scene=scene,
                                                      reference_frame=reference_frame,
                                                      n_rays_per_image=n_rays_per_image,
-                                                     n_pts_object=0,
                                                      exp_dict=exp_dict,
                                                      )
-        

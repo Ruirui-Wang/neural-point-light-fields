@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from rosbags.rosbag2 import Reader
-from nerf.point_cloud_helpers import *
-from nerf.image_processor import *
-from nerf.point_cloud_processor import *
-from nerf.ros_bag_processor import *
+from src.datasets.point_cloud_helpers import *
+from src.datasets.image_processor import *
+from src.datasets.point_cloud_processor import *
+from src.datasets.ros_bag_processor import *
 
 @dataclass
 class SynchronizedMessage:

@@ -6,52 +6,20 @@ from src.datasets.ros_bag_processor import *
 from src.datasets.lidar_image_projector import *
 from src.datasets.kitti_dataset_creator import *
 import pylab as plt
-# import tensorflow as tf
-# from ..nerf_tf.prepare_input_helper import extract_object_information
 import numpy as np
 import torch, os, copy, glob
+from src.datasets.rosbag import Rosbag
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def get_dataset(datadir, scene_dict, args):
-    scene_dict = copy.deepcopy(scene_dict)
-    selected_frames = None
-    if scene_dict["last_frame"] is not None:
-        selected_frames = [scene_dict["first_frame"], scene_dict["last_frame"]]
+def get_dataset(datadir, scene_dict):
+    dataset = Rosbag(datadir, scene_dict)
 
-    if scene_dict['type'] == 'waymo':
-        from .waymo import Waymo
-        # Scene Id in Waymo is a combination of dataset number (e.g. 4 for 0004)
-        # and the rank of the tfrecord sorted alphabetical (e.g. 0 for segment-18446264979321894359_3700_000_3720_000_with_camera_labels.tfrecord)
-        datadir_full = datadir + ''
-        scene_id = scene_dict['scene_id']
-        record_id = scene_id[1]
-        subdirs_list = [d.name for d in os.scandir(datadir) if d.is_dir() if d.name[-4:].isnumeric()]
-        assert scene_id[0]<len(subdirs_list),'Folder %s does not have %d subfolers'%(datadir,scene_id[0]+1)
-        # datadir_full = os.path.join(datadir, subdirs_list[scene_id[0]])
-        for sub_dir in sorted(subdirs_list):
-            if sub_dir[-4:].isnumeric():
-                if int(sub_dir[-4:]) == scene_id[0]:
-                    datadir_full = os.path.join(datadir, sub_dir)
-                    datadir_full = sorted([f.path for f in os.scandir(datadir_full) if f.is_dir()])[record_id]
-                    break
-        # datadir_full = os.path.join(datadir_full, record_dir)
-
-        dataset = Waymo(datadir_full, scene_dict, selected_frames=selected_frames,object_types=scene_dict['object_types'])
-
-    else:
-        raise ValueError("dataset does not exist")
-    # print(f'Loaded {scene_dict["type"]}', dataset.images.shape,  dataset.hwf, datadir_full)
     print(
         "\nLoaded scene",
-        os.path.split(datadir_full)[-1],
         f"with {len(dataset.images)} frames.",
     )
-    # sanity plots
-    # plot_poses(dataset, fname=f".tmp/poses_{scene_dict['type']}-{scene_dict['scene_id']}.png")
-    # plot_poses(dataset.poses, dataset.visible_objects, dataset.object_positions, fname='.tmp/tmp.png')
-
     return dataset
 
 

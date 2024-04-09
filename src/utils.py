@@ -6,8 +6,6 @@ import numpy as np
 import torch
 from PIL import Image
 from haven import haven_utils as hu
-from haven import haven_examples as he
-from haven import haven_wizard as hw
 from haven import haven_results as hr
 from src import models
 from src.scenes import NeuralScene

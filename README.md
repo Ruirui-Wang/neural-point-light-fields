@@ -1,3 +1,10 @@
+This repository is a fork of the [original NPLF repository](https://github.com/princeton-computational-imaging/neural-point-light-fields.git) customized for testing on a rosbag dataset.
+#### Extract data from rosbag
+```
+python ./src/datasets/preprocess_rosbags.py
+```
+
+
 # Neural Point Light Fields (CVPR 2022)
 
 <img src="https://light.princeton.edu/wp-content/uploads/2022/03/overview_pointLF-e1651199652729.png">
