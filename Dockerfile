@@ -72,7 +72,7 @@ ENV PATH="/opt/conda/bin:${PATH}"
 
 RUN conda init bash
 
-RUN conda create -n NeuralPointLF python=3.7 \
+RUN conda create -n NeuralPointLF python=3.8 \
     && eval "$(conda shell.bash hook)" \
     && conda activate NeuralPointLF \
     && echo "conda activate NeuralPointLF" >> ~/.bashrc \

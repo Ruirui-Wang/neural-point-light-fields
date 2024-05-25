@@ -24,7 +24,7 @@ class BagFileProcessor:
             '/basler00/pylon_ros2_camera_node/image_raw': 'basler00',
             '/basler01/pylon_ros2_camera_node/image_raw': 'basler01'
         }
-        self.limit = 1000 # FIXME: This is a temporary limit for development purposes
+        self.limit = 10000
 
     def generate_synchronized_messages(self):
         self._process_bag_file()
@@ -33,10 +33,10 @@ class BagFileProcessor:
     def _process_bag_file(self):
         with Reader(self.bag_file_path) as reader:
             for connection, timestamp, rawdata in reader.messages():
-                self.limit -= 1
                 msgtype = connection.msgtype
                 topic = connection.topic
                 if msgtype.endswith('Image'):
+                    self.limit -= 1
                     image, topic = self.image_processor.process_image(rawdata, msgtype, topic)
                     self.image_data[timestamp] = (image, topic)
                 elif msgtype.endswith('PointCloud2'):

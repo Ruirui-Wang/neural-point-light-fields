@@ -743,7 +743,7 @@ def frames_from_dataset(dataset, nodes, n_frames=None, veh_world=False, all_cams
     # Extract objects from dataset
     # object_poses = dataset.obj_poses
 
-    if veh_world:
+    '''if veh_world:
         # TODO: Rewrite together with loader such that lidar_poses_world and camera_poses_world are generated here and not inside the dataloader
         lidar_poses = dataset.lidar_poses_world.reshape([n_lasers, n_pcd // n_lasers, -1])
         camera_poses = dataset.poses_world.reshape([n_cameras, n_img // n_cameras, -1])
@@ -759,7 +759,8 @@ def frames_from_dataset(dataset, nodes, n_frames=None, veh_world=False, all_cams
                 for pop_cam in cam_ids[-1:]:
                     nodes["camera"].pop(pop_cam)
     else:
-        lidar_poses = dataset.lidar_poses.reshape([n_lasers, n_pcd // n_lasers, -1])
+        '''
+    lidar_poses = dataset.lidar_poses.reshape([n_lasers, n_pcd // n_lasers, -1])
 
     if hasattr(dataset, 'obj_poses'):
         EXAMINE_ALL_CAM_OBJECTS = (dataset.type != 'kitti')
