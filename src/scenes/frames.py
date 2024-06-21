@@ -40,7 +40,7 @@ class Frame:
         self.camera_ids = list(camera.keys())
 
         self.global_transformation = global_transformation
-
+        print("!!!!",global_transformation)
         self.background_node = root_node.scene_idx
 
         if lidar is not None:
@@ -107,7 +107,7 @@ class Frame:
                 points = o3d.io.read_point_cloud(self.point_cloud_pth[lidar_idx]).points
                 points = np.asarray(points)
             else:
-                points = np.fromfile(self.point_cloud_pth[lidar_idx], dtype=np.float32, count=-1).reshape([-1, 4])
+                points = np.loadtxt(self.point_cloud_pth[lidar_idx]).reshape([-1, 4])
 
             if caching:
                 self.point_cloud[lidar_idx] = points

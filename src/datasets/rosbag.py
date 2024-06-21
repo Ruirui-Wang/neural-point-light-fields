@@ -132,7 +132,7 @@ class Rosbag:
                 pose[:3, :3] = np.dot(transform_matrix_z[:3, :3], quaternion_to_rotation_matrix(*desired_orientation))
                 self.lidar_poses.append(pose)
                 self.poses.append(pose@cam2veh_data)
-
+                self.veh_pose = np.stack(self.poses)[:n_frames]
 
         self.poses = np.stack(self.poses)
         self.lidar_poses = np.stack(self.lidar_poses)

@@ -94,6 +94,7 @@ class PointDistanceRaysamplerTorch(nn.Module):
             ray_d = ray_bundle.directions
 
             li_sel_idx = np.array([v.scene_idx if v.name == 'TOP' else -1 for k, v in scene.nodes['lidar'].items()])
+            li_sel_idx = np.array([v.scene_idx for k, v in scene.nodes['lidar'].items()])
             top_lidar_id = li_sel_idx[np.where(li_sel_idx > 0)][0]
             # TODO: Add point cloud loading and icp to get_item of the scene similar to image pass
             if not self.merge_pcd:
@@ -417,7 +418,7 @@ class PointDistanceRaysamplerTorch(nn.Module):
                 # Only return points in front of vehicle
                 # TODO: Find different solution for WAYMO e.g. just the viewing frustum for Left and Right Camera
                 points = points[np.where(points[:, 0] >= 0.)]
-
+            downsampling_factor = None
             if downsampling_factor is not None:
                 if floor is None:
                     all_points = o3d.geometry.PointCloud()
