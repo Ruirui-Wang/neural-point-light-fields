@@ -42,7 +42,7 @@ class Rosbag:
         assert np.round(len(self.images)/self.num_cameras)==len(self.images)/self.num_cameras
         self.num_frames = len(self.images)//self.num_cameras
 
-        intrinsics = CameraIntrinsicHandler('./dataset/camera_calibration/calibration_basler00.txt').get_parameters()
+        intrinsics = CameraIntrinsicHandler('./dataset/camera_calibration/calibration_basler01.txt').get_parameters()
 
         self.focal = intrinsics.camera_matrix[0][0]
         self.H = intrinsics.height

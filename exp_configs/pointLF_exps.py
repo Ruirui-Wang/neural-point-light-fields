@@ -92,7 +92,7 @@ EXP_GROUPS['pointLF_waymo_local'] = hu.cartesian_exp_group({
                    'num_merged_frames': 1,
                    },
     # "overfit": "frame",
-    "scale": 0.0625, # 0.125,
+    "scale": 0.625, # 0.125,
     "point_chunk": 1e7,
     'version': [0],
     'tonemapping': False,

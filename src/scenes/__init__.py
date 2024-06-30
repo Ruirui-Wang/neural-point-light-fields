@@ -859,7 +859,6 @@ def frames_from_dataset(dataset, nodes, n_frames=None, veh_world=False, all_cams
 
         if has_objects is False and hasattr(dataset, 'obj_poses'):
             continue
-        print("!!!!!!!!!",dataset.veh_pose[frame_id])
         frame = Frame(
             root_node=background_node,
             image=image_ls,

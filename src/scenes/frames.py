@@ -40,7 +40,6 @@ class Frame:
         self.camera_ids = list(camera.keys())
 
         self.global_transformation = global_transformation
-        print("!!!!",global_transformation)
         self.background_node = root_node.scene_idx
 
         if lidar is not None:
