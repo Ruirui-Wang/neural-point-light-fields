@@ -1,6 +1,5 @@
 from src.datasets.camera_intrinsics_handler import CameraIntrinsicHandler
 from src.datasets.ros_bag_processor import BagFileProcessor
-from src.datasets.lidar_image_projector import LidarImageProjector
 from src.datasets.kitti_dataset_creator import KITTIDatasetCreator
 
 bag_file_path = './dataset'

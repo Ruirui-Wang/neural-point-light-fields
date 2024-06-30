@@ -5,6 +5,8 @@ import numpy as np
 from collections import defaultdict
 from copy import deepcopy
 
+import plotly.graph_objs as go
+
 from src.datasets.camera_intrinsics_handler import CameraIntrinsicHandler
 from src.datasets.lidar_image_projector import extrinsics
 from src.datasets.utils import invert_transformation,roty_matrix, rotz_matrix
@@ -136,6 +138,8 @@ class Rosbag:
 
         self.poses = np.stack(self.poses)
         self.lidar_poses = np.stack(self.lidar_poses)
+
+
         print('Loaded Rosbag')
 
 def quaternion_to_rotation_matrix(qx, qy, qz, qw):

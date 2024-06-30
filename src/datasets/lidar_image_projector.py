@@ -5,46 +5,17 @@ from matplotlib import cm
 from matplotlib.cm import ScalarMappable
 from matplotlib.colors import Normalize
 
-def euler_to_extrinsics(pitch, yaw, roll, tx, ty, tz):
-    # Convert degrees to radians
-    pitch = np.radians(pitch)
-    yaw = np.radians(yaw)
-    roll = np.radians(roll)
+rotation_matrix = np.array([
+    [-0.2, 0.98, -0.021],
+    [0.086, -0.0036, -1],
+    [-0.97, -0.21, -0.083]
+])
 
-    # Calculate individual rotation matrices
-    Rx = np.array([
-        [1, 0, 0],
-        [0, np.cos(pitch), -np.sin(pitch)],
-        [0, np.sin(pitch), np.cos(pitch)]
-    ])
+translation_vector = np.array([-0.12, -0.047, 0.039])
 
-    Ry = np.array([
-        [np.cos(yaw), 0, np.sin(yaw)],
-        [0, 1, 0],
-        [-np.sin(yaw), 0, np.cos(yaw)]
-    ])
-
-    Rz = np.array([
-        [np.cos(roll), -np.sin(roll), 0],
-        [np.sin(roll), np.cos(roll), 0],
-        [0, 0, 1]
-    ])
-
-    # Combine rotations into a single matrix
-    R = Rz @ Ry @ Rx
-
-    # Create extrinsics matrix
-    extrinsics = np.eye(4)
-    extrinsics[:3, :3] = R
-    extrinsics[:3, 3] = [tx, ty, tz]
-
-    return extrinsics
-
-pitch, yaw, roll = -1.371, 93.143, -100.686
-tx, ty, tz = -0.090, -0.185, 0.202
-
-extrinsics = euler_to_extrinsics(pitch, yaw, roll, tx, ty, tz)
-
+extrinsics = np.eye(4)
+extrinsics[:3, :3] = rotation_matrix
+extrinsics[:3, 3] = translation_vector
 
 class LidarImageProjector:
     def __init__(self, camera_parameters):
