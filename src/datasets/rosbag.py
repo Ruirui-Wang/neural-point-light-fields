@@ -89,7 +89,7 @@ class Rosbag:
                 qy = float(row[7])
                 qz = float(row[8])
                 qw = float(row[9])
-                timestamps.append(timestamp_sec + timestamp_nsec * 1e-9)
+                timestamps.append(timestamp_sec*1e10 + timestamp_nsec)
                 frame_ids.append(frame_id)
                 positions.append((x, y, z))
                 orientations.append((qx, qy, qz, qw))
@@ -105,7 +105,7 @@ class Rosbag:
             t1 = None
             t2 = None
             for j in range(len(positions)):
-                if int(timestamps[j] * 1e9) - int(pointcloud_timestamps[i]) >= 0:
+                if int(timestamps[j]) - int(pointcloud_timestamps[i]) >= 0:
                     t1 = j-1
                     t2 = j
                     break
@@ -117,7 +117,7 @@ class Rosbag:
                 break
             else:
                 print(t1, t2)
-                alpha = (int(pointcloud_timestamps[i]) - timestamps[t1] * 1e9) / (timestamps[t2] * 1e9 - timestamps[t1] * 1e9)
+                alpha = (int(pointcloud_timestamps[i]) - timestamps[t1]) / (timestamps[t2] - timestamps[t1])
                 desired_position = (
                     positions[t1][0] + alpha * (positions[t2][0] - positions[t1][0]),
                     positions[t1][1] + alpha * (positions[t2][1] - positions[t1][1]),
