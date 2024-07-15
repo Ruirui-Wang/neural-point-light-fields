@@ -106,7 +106,7 @@ def trainval(exp_dict, savedir, args):
     # val_dict = model.val_on_scene(scene, savedir_images=os.path.join(savedir, "images"), all_frames=True)
 
     if not args.render_only:
-        for e in range(chk_dict["epoch"], 5000):
+        for e in range(chk_dict["epoch"], 10000):
             # 0. init score dict
             score_dict = {"epoch": e, "n_objects": len(scene.nodes["scene_object"])}
 

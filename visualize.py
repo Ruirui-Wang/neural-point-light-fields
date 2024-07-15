@@ -87,7 +87,7 @@ scene_loader = torch.utils.data.DataLoader(
 
 
 
-reference_id = 59
+reference_id = 29
 # reference_id = 25
 # reference_id = 129
 
@@ -109,8 +109,8 @@ euler_end = np.array([np.deg2rad(0.),np.deg2rad(-11.),np.deg2rad(0.)])
 
 # Translation in camera space; when level: 1.-"LEFT", 2.-"UP", 3.-"FORWARD"
 translation_start = np.array([0.,0.0,0.0])
-translation_mid = np.array([1.25,0.0,4.0])
-translation_end = np.array([0.75,0.0,7.5])
+translation_mid = np.array([0.05,0.0,0.3])
+translation_end = np.array([0.25,0.0,0.5])
 
 # translation_start = np.array([3,0.0,0.0])
 # translation_end = np.array([-3,0.0,0.0])
@@ -274,11 +274,12 @@ def render_frame_from_cam_trafo(translation_change, euler_angles, scene, referen
         scene.frames[reference_id].edges[cam_ed_idx].rotation.detach().cpu().numpy()))
 
     # Get best point cloud
-    li_node_id = [(key, li.name) for key, li in scene.nodes['lidar'].items() if li.name == 'TOP'][0][0]
+    li_node_id = [key for key, li in scene.nodes['lidar'].items()][0]
     distance = np.linalg.norm(cam2wo_translat.detach().cpu().numpy() - scene.frames[reference_id].edges[
         cam_ed_idx].translation.detach().cpu().numpy())
     closest_frame_idx = reference_id
     for i in range(len(scene) - reference_id - 1):
+
         check_frame_id = i + reference_id + 1
         check_cam_ed = scene.frames[check_frame_id].get_edge_by_child_idx([1])[0][0]
         distance_3D = check_cam_ed.translation - scene.frames[reference_id].edges[cam_ed_idx].translation
@@ -442,7 +443,7 @@ cam_pose_openGL = np.concatenate([cam_pose_openGL, hwf], axis=2)
 cam_pose_openGL.shape
 
 np.save(os.path.join(segmemt_pth, exp_name + '_' + render_pose_file_n,), cam_pose_openGL)
-os.path.join(segmemt_pth, exp_name + '_' + render_pose_file_n)
-
+'''os.path.join(segmemt_pth, exp_name + '_' + render_pose_file_n)
+'''
 
 

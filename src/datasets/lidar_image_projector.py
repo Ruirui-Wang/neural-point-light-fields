@@ -6,11 +6,11 @@ from matplotlib.cm import ScalarMappable
 from matplotlib.colors import Normalize
 
 rotation_matrix = np.array(
-    [[-0.18, 0.98, -0.021],
-       [0.045, -0.013, -1],
-       [-0.98, -0.18, -0.042]])
+    [[-0.2, 0.98, -0.0017],
+     [0.045, 0.0076, -1],
+     [-0.98, -0.2, -0.046]])
 
-translation_vector = np.array([-0.16, -0.078, 0.73])
+translation_vector = np.array([-0.28, -0.078, 0.73])
 
 extrinsics = np.eye(4)
 extrinsics[:3, :3] = rotation_matrix
