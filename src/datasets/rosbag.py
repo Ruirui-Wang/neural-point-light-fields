@@ -69,7 +69,8 @@ class Rosbag:
             [0., 0., 1., 1.2],
             [0., 0., 0., 1.]
         ])
-        veh2cam = extrinsics
+        veh2cam = np.linalg.inv(extrinsics)
+        '''veh2cam = extrinsics'''
         cam2veh_data = np.stack(veh2cam)
         timestamps = []
         frame_ids = []
@@ -97,7 +98,7 @@ class Rosbag:
             reader = csv.reader(csvfile)
             for row in reader:
                 index = int(row[0])
-                timestamp = int(row[1])
+                timestamp = int(float(row[1]))
                 pointcloud_timestamps.append(timestamp)
 
         for i in range(len(pointcloud_timestamps)):

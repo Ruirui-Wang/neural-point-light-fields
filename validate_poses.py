@@ -20,7 +20,7 @@ positions = []
 orientations = []
 poses = []
 pointcloud_timestamps = []
-with open('./data/pose_data.csv', 'r') as csvfile:
+'''with open('./data/pose_data.csv', 'r') as csvfile:
     reader = csv.reader(csvfile)
     for row in reader:
         timestamp_sec = float(row[0])
@@ -33,15 +33,63 @@ with open('./data/pose_data.csv', 'r') as csvfile:
         qy = float(row[7])
         qz = float(row[8])
         qw = float(row[9])
-        timestamps.append(timestamp_sec + timestamp_nsec * 1e-9)
+        timestamps.append(timestamp_sec*1e10 + timestamp_nsec)
         frame_ids.append(frame_id)
         positions.append((x, y, z))
         orientations.append((qx, qy, qz, qw))
+'''
+import csv
+import math
+
+def pose2d_to_quaternion(theta):
+    """Convert 2D theta to quaternion (qx, qy, qz, qw)."""
+    qw = math.cos(theta / 2)
+    qz = math.sin(theta / 2)
+    qx = 0
+    qy = 0
+    return (qx, qy, qz, qw)
+
+# Initialize lists to store results
+timestamps = []
+frame_ids = []
+positions = []
+orientations = []
+
+with open('./data/pose_data.csv', 'r') as csvfile:
+    reader = csv.reader(csvfile)
+    for row in reader:
+        timestamp_sec = float(row[0])
+        timestamp_nsec = float(row[1])
+        frame_id = row[2]
+        pose2d_x = float(row[3])
+        pose2d_y = float(row[4])
+        pose2d_theta = float(row[5])
+
+        # Convert to 3D position (x, y, 0)
+        x = pose2d_x
+        y = pose2d_y
+        z = 0  # Assuming a flat plane, z is 0
+
+        # Convert theta to quaternion
+        qx, qy, qz, qw = pose2d_to_quaternion(pose2d_theta)
+
+        # Append results
+        timestamps.append(timestamp_sec * 1e10 + timestamp_nsec)
+        frame_ids.append(frame_id)
+        positions.append((x, y, z))
+        orientations.append((qx, qy, qz, qw))
+
+# Output the converted data
+print("Timestamps:", timestamps)
+print("Frame IDs:", frame_ids)
+print("Positions:", positions)
+print("Orientations:", orientations)
+
 with open('./data/timestamp_data.csv', 'r') as csvfile:
     reader = csv.reader(csvfile)
     for row in reader:
         index = int(row[0])
-        timestamp = int(row[1])
+        timestamp = int(float(row[1]))
         pointcloud_timestamps.append(timestamp)
 
 for i in range(len(pointcloud_timestamps)):
@@ -49,7 +97,7 @@ for i in range(len(pointcloud_timestamps)):
     t1 = None
     t2 = None
     for j in range(len(positions)):
-        if int(timestamps[j] * 1e9) - int(pointcloud_timestamps[i]) >= 0:
+        if int(timestamps[j]) - int(pointcloud_timestamps[i]) >= 0:
             t1 = j - 1
             t2 = j
             break
@@ -57,7 +105,7 @@ for i in range(len(pointcloud_timestamps)):
         break
     else:
         print(t1, t2)
-        alpha = (int(pointcloud_timestamps[i]) - timestamps[t1] * 1e9) / (timestamps[t2] * 1e9 - timestamps[t1] * 1e9)
+        alpha = (int(pointcloud_timestamps[i]) - timestamps[t1]) / (timestamps[t2] - timestamps[t1] )
         desired_position = (
             positions[t1][0] + alpha * (positions[t2][0] - positions[t1][0]),
             positions[t1][1] + alpha * (positions[t2][1] - positions[t1][1]),
@@ -76,12 +124,12 @@ for i in range(len(pointcloud_timestamps)):
 
 
 
-rotation_matrix = np.array([[-0.2, 0.98, -0.021],
-       [0.086, -0.0036, -1],
-       [-0.97, -0.21, -0.083]])
+rotation_matrix = np.array(
+    [[-0.18, 0.98, -0.021],
+       [0.045, -0.013, -1],
+       [-0.98, -0.18, -0.042]])
 
-
-translation_vector = np.array([-0.12, -0.047, 0.051])
+translation_vector = np.array([-0.16, -0.078, 0.73])
 
 extrinsics_lidar_to_cam = np.eye(4)
 extrinsics_lidar_to_cam[:3, :3] = rotation_matrix
@@ -113,10 +161,6 @@ def compute_camera_poses(lidar_poses, extrinsics_lidar_to_cam):
 lidar_poses = compute_lidar_poses(poses, extrinsics_cam_to_lidar)
 cam_poses = compute_camera_poses(lidar_poses, extrinsics_lidar_to_cam)
 
-print("Lidar poses in world coordinates:\n", lidar_poses[100])
-print("Camera poses in world coordinates:\n", cam_poses[100])
-print("Vehicle poses in world coordinates:\n", poses[100])
-
 
 def plot_poses(poses, color='blue', label='Pose'):
     fig = plt.figure()
@@ -130,11 +174,11 @@ def plot_poses(poses, color='blue', label='Pose'):
     plt.legend()
     plt.show()
 
-'''plot_poses(poses, color='blue', label='Camera Poses')
+plot_poses(poses, color='blue', label='Camera Poses')
 
 plot_poses(lidar_poses, color='red', label='Lidar Poses')
 
-plot_poses(cam_poses, color='green', label='Vehicle Poses')'''
+plot_poses(cam_poses, color='green', label='Vehicle Poses')
 
 
 import plotly.graph_objs as go
@@ -195,8 +239,8 @@ def project_and_save(points, image, M1, M2):
     coords[:, 0] /= coords[:, 2]
     coords[:, 1] /= coords[:, 2]
 
-    coords = coords[np.where(coords[:, 2] > 1e-1)]
-    coords = coords[np.where(coords[:, 2] < 2e1)]
+    coords = coords[np.where(coords[:, 2] > 1e-3)]
+    coords = coords[np.where(coords[:, 2] < 2e3)]
     coords = coords[np.where(coords[:, 0] > 0)]
     coords = coords[np.where(coords[:, 0] < resolution[1])]
     coords = coords[np.where(coords[:, 1] > 0)]
@@ -219,8 +263,8 @@ def show_projected_image(image, coords=None, depth=None):
     plt.imshow(canvas)
     plt.show()
 
-img = cv2.imread('./data/images/basler01/000080.png')
-pointclouds = np.loadtxt('./data/lidar/basler01/000080.txt')
+img = cv2.imread('./data/images/basler01/000010.png')
+pointclouds = np.loadtxt('./data/lidar/basler01/000010.txt')
 intrinsics = CameraIntrinsicHandler('./dataset/camera_calibration/calibration_basler01.txt').get_parameters()
 
 intrinsics_4x4 = np.eye(4)
@@ -229,7 +273,6 @@ intrinsics_4x4[:3, :3] = intrinsics.camera_matrix
 print(extrinsics_lidar_to_cam)
 
 coords, depth = project_and_save(pointclouds, img, intrinsics_4x4 ,extrinsics_lidar_to_cam)
-show_projected_image(cv2.flip(cv2.flip(img, 0),1), coords=coords,depth = depth)
 show_projected_image(img, coords=coords,depth = depth)
 
 

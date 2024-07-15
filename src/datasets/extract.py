@@ -66,7 +66,67 @@ with open('../../data/pose_data.csv', 'w') as csvfile:
 with open('../../data/timestamp_data.csv', 'w') as csvfile:
     pass
 
-with Reader('../../dataset') as reader:
+'''with Reader('/Users/ruiruiwang/Downloads/rosbag2_2024_06_19-15_04_16') as reader:
+    for connection, timestamp, rawdata in reader.messages():
+        if connection.topic == '/herbie/observations/velodyne_points':
+            previous_pointcloud_msg = deserialize_cdr(rawdata, connection.msgtype)
+            previous_pointcloud_timestamp = timestamp
+        elif connection.topic == '/basler01/pylon_ros2_camera_node/image_raw':
+            image_msg = deserialize_cdr(rawdata, connection.msgtype)
+            image = extract_image_data(image_msg)
+            image = cv2.flip(cv2.flip(image, 0),1)
+            closest_timestamp = previous_pointcloud_timestamp if previous_pointcloud_timestamp else float('inf')
+            # Check the next pointcloud message
+            for next_connection, next_timestamp, next_rawdata in reader.messages():
+                if next_connection.topic == '/herbie/observations/velodyne_points':
+                    if abs(closest_timestamp - timestamp) > abs(next_timestamp - timestamp):
+                        if abs(next_timestamp - timestamp) < 3e6: # 3ms
+                            print(abs(next_timestamp - timestamp))
+                            pointcloud_msg = deserialize_cdr(rawdata, connection.msgtype)
+                            pointcloud = extract_point_cloud_data(pointcloud_msg)
+                            synchronized_msg.append({
+                                'image_timestamp': timestamp,
+                                'image': image,
+                                'pointcloud_timestamp': next_timestamp,
+                                'pointcloud': pointcloud,
+                                'camera': '01'
+                            })
+                    else:
+                        if abs(closest_timestamp - timestamp) < 3e6: # 3ms
+                            print(abs(closest_timestamp - timestamp))
+                            previous_pointcloud = extract_point_cloud_data(previous_pointcloud_msg)
+                            synchronized_msg.append({
+                                'image_timestamp': timestamp,
+                                'image': image,
+                                'pointcloud_timestamp': closest_timestamp,
+                                'pointcloud': previous_pointcloud,
+                                'camera': '01'
+                            })
+                    if len(synchronized_msg) > 0 and len_sync_msg!= len(synchronized_msg):
+                        len_sync_msg = len(synchronized_msg)
+                        image_filename = os.path.join('../../data/images/basler01', f"{len_sync_msg-1:06}.png")
+                        cv2.imwrite(image_filename, synchronized_msg[-1]['image'])
+                        print("image",image_filename)
+                        file_path = os.path.join('../../data/lidar/basler01', f"{len_sync_msg-1:06}.txt")
+                        np.savetxt(file_path, synchronized_msg[-1]['pointcloud'])
+                        print("pointcloud", file_path)
+                        with open('../../data/timestamp_data.csv', 'a') as csvfile:
+                            writer = csv.writer(csvfile)
+                            writer.writerow(
+                                [f"{len_sync_msg-1:06}", synchronized_msg[-1]['pointcloud_timestamp']])
+                    break
+        elif connection.topic == '/herbie/observations/pose':
+            msg = deserialize_cdr(rawdata, connection.msgtype)
+            stamp = msg.header.stamp
+            frame_id = msg.header.frame_id
+            position = msg.pose.position
+            orientation = msg.pose.orientation
+            with open('../../data/pose_data.csv', 'a') as csvfile:
+                writer = csv.writer(csvfile)
+                writer.writerow([stamp.sec, stamp.nanosec, frame_id, position.x, position.y, position.z, orientation.x,
+                                 orientation.y, orientation.z, orientation.w])
+'''
+with Reader('/Users/ruiruiwang/NerfProject/neural-point-light-fields copy/dataset') as reader:
     for connection, timestamp, rawdata in reader.messages():
         if connection.topic == '/herbie/observations/velodyne_points':
             previous_pointcloud_msg = deserialize_cdr(rawdata, connection.msgtype)
@@ -74,6 +134,7 @@ with Reader('../../dataset') as reader:
         elif connection.topic == '/basler00/pylon_ros2_camera_node/image_raw':
             image_msg = deserialize_cdr(rawdata, connection.msgtype)
             image = extract_image_data(image_msg)
+            image = cv2.flip(cv2.flip(image, 0),1)
             closest_timestamp = previous_pointcloud_timestamp if previous_pointcloud_timestamp else float('inf')
             # Check the next pointcloud message
             for next_connection, next_timestamp, next_rawdata in reader.messages():
@@ -105,6 +166,7 @@ with Reader('../../dataset') as reader:
         elif connection.topic == '/basler01/pylon_ros2_camera_node/image_raw':
             image_msg = deserialize_cdr(rawdata, connection.msgtype)
             image = extract_image_data(image_msg)
+            image = cv2.flip(cv2.flip(image, 0),1)
             closest_timestamp = previous_pointcloud_timestamp if previous_pointcloud_timestamp else float('inf')
             # Check the next pointcloud message
             for next_connection, next_timestamp, next_rawdata in reader.messages():
@@ -155,7 +217,6 @@ with Reader('../../dataset') as reader:
                 writer = csv.writer(csvfile)
                 writer.writerow([stamp.sec, stamp.nanosec, frame_id, position.x, position.y, position.z, orientation.x,
                                  orientation.y, orientation.z, orientation.w])
-
 
 
 
