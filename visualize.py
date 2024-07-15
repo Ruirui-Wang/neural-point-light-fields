@@ -55,8 +55,6 @@ np.random.seed(seed)
 torch.manual_seed(seed)
 torch.cuda.manual_seed_all(seed)
 
-args = None
-
 scene = NeuralScene(
     scene_list=exp_dict["scenes"],
     datadir=args.datadir,
@@ -159,7 +157,6 @@ def get_render_cam_trafo(translation_change, euler_angles, scene, reference_id):
     ref_new_frame_copy = copy.deepcopy(new_frame)
     cam_idx = 1
     # print([(node_idx, cam_node.name) for (node_idx, cam_node) in scene.nodes['camera'].items()])
-    assert scene.nodes['camera'][cam_idx].name == 'FRONT'
     camera_ed = new_frame.get_edge_by_child_idx([cam_idx])[0][0]
     cam_ed_idx = new_frame.get_edge_idx_by_child_idx([cam_idx])[0][0]
     # print(camera_ed.get_transformation_c2p().get_matrix().detach().cpu().numpy()[0].T)
@@ -244,7 +241,6 @@ def render_frame_from_cam_trafo(translation_change, euler_angles, scene, referen
     ref_new_frame_copy = copy.deepcopy(new_frame)
     cam_idx = 1
     # print([(node_idx, cam_node.name) for (node_idx, cam_node) in scene.nodes['camera'].items()])
-    assert scene.nodes['camera'][cam_idx].name == 'FRONT'
     camera_ed = new_frame.get_edge_by_child_idx([cam_idx])[0][0]
     cam_ed_idx = new_frame.get_edge_idx_by_child_idx([cam_idx])[0][0]
     # print(camera_ed.get_transformation_c2p().get_matrix().detach().cpu().numpy()[0].T)
