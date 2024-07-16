@@ -92,7 +92,7 @@ def trainval(exp_dict, savedir, args):
     # TODO: Find permanent fix https://discuss.pytorch.org/t/runtimeerror-received-0-items-of-ancdata/4999
     # torch.multiprocessing.set_sharing_strategy('file_system')
 
-    model = models.Model(scene, exp_dict, precache=exp_dict.get("precache"), args=args)
+    model = models.Model(scene, exp_dict, precache=exp_dict.get("precache"), args=args, device = args.device)
 
     # 3. load checkpoint
     chk_dict = hw.get_checkpoint(savedir, return_model_state_dict=True)
@@ -179,6 +179,9 @@ if __name__ == "__main__":
     parser.add_argument("-d", "--datadir")
     parser.add_argument(
         "-r", "--reset", default=0, type=int, help="Reset or resume the experiment."
+    )
+    parser.add_argument(
+        "-device", default='cuda', type=str, help="Device."
     )
     parser.add_argument(
         "-j", "--job_scheduler", default=None, help="Run jobs in cluster."

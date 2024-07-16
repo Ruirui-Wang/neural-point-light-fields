@@ -21,7 +21,7 @@ class Rosbag:
         self.num_lasers = 1
         self.lidar_poses = []
         self.poses = []
-        image_directory = './data/images/basler01'
+        image_directory = datadir + '/images/basler01'
         image_paths = []
         for filename in os.listdir(image_directory):
             if filename.endswith('.jpg') or filename.endswith('.png'):
@@ -31,7 +31,7 @@ class Rosbag:
         self.images = sorted_image_paths
 
 
-        pointcloud_directory = './data/lidar/basler01'
+        pointcloud_directory = datadir + '/lidar/basler01'
         point_cloud_paths = []
         for filename in os.listdir(pointcloud_directory):
             if filename.endswith('.txt') :
@@ -77,7 +77,7 @@ class Rosbag:
         positions = []
         orientations = []
         pointcloud_timestamps = []
-        with open('./data/pose_data.csv', 'r') as csvfile:
+        with open(datadir + '/pose_data.csv', 'r') as csvfile:
             reader = csv.reader(csvfile)
             for row in reader:
                 timestamp_sec = float(row[0])
@@ -94,7 +94,7 @@ class Rosbag:
                 frame_ids.append(frame_id)
                 positions.append((x, y, z))
                 orientations.append((qx, qy, qz, qw))
-        with open('./data/timestamp_data.csv', 'r') as csvfile:
+        with open(datadir + '/timestamp_data.csv', 'r') as csvfile:
             reader = csv.reader(csvfile)
             for row in reader:
                 index = int(row[0])

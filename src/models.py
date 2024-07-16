@@ -25,8 +25,8 @@ class Model:
         self,
         scene,
         exp_dict,
+        device,
         precache=True,
-        device="cuda",
         args=None,
     ):
         self.device = device
