@@ -101,16 +101,16 @@ translation_mid = None
 
 # Rotation ('ZYX'/"ROLL", "YAW", "PITCH")
 euler_start = np.array([np.deg2rad(0.),np.deg2rad(0.),np.deg2rad(0.)])
-euler_mid = np.array([np.deg2rad(0.),np.deg2rad(-0.9),np.deg2rad(0.)])
-euler_end = np.array([np.deg2rad(0.),np.deg2rad(-1.1),np.deg2rad(0.)])
+euler_mid = np.array([np.deg2rad(0.),np.deg2rad(0.),np.deg2rad(0.)])
+euler_end = np.array([np.deg2rad(0.),np.deg2rad(0.),np.deg2rad(0.)])
 
 # euler_start = np.array([np.deg2rad(0.),np.deg2rad(-8.),np.deg2rad(0.)])
 # euler_end = np.array([np.deg2rad(0.),np.deg2rad(8.),np.deg2rad(0.)])
 
 # Translation in camera space; when level: 1.-"LEFT", 2.-"UP", 3.-"FORWARD"
 translation_start = np.array([0.,0.0,0.0])
-translation_mid = np.array([0.125,0.0,0.40])
-translation_end = np.array([0.075,0.0,0.75])
+translation_mid = np.array([0.025,0.0,0.10])
+translation_end = np.array([0.075,0.0,0.15])
 
 # translation_start = np.array([3,0.0,0.0])
 # translation_end = np.array([-3,0.0,0.0])
